@@ -40,6 +40,12 @@ func NewLibrary(studentID, password string) (*Library, error) {
 	if lib.URL == "" {
 		return nil, errors.New("获取url失败！")
 	}
+	loginErr := 0
+	lib.c.OnHTML("#feedbackbar", func(e *colly.HTMLElement) {
+		if strings.Contains(e.Text, "错") {
+			loginErr = 1 //账号或密码错误
+		}
+	})
 
 	// login
 	err := lib.c.Post(lib.URL, map[string]string{
@@ -49,8 +55,13 @@ func NewLibrary(studentID, password string) (*Library, error) {
 		"bor_verification": password,
 		"bor_library":      "SCU50",
 	})
+
 	if err != nil {
 		return nil, err
+	}
+
+	if loginErr != 0 {
+		return nil, errors.New("账号或密码错误！")
 	}
 	return lib, nil
 }
