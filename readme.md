@@ -14,3 +14,5 @@ go get -u github.com/mohuishou/sculibrary-go
 - [ ] 当前预约
 - [x] 历史借阅
 - [x] 图书搜索
+- [x] 部分续借
+- [x] 续借全部
