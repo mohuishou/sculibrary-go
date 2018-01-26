@@ -11,6 +11,6 @@ go get -u github.com/mohuishou/sculibrary-go
 ## Feature
 
 - [x] 当前借阅
-- [x] 当前预约
+- [ ] 当前预约
 - [x] 历史借阅
 - [x] 图书搜索
