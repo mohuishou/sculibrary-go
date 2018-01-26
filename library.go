@@ -2,6 +2,7 @@ package library
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"reflect"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"github.com/gocolly/colly"
 )
 
+// Library 图书馆操作类
 type Library struct {
 	URL string
 	c   *colly.Collector
@@ -19,6 +21,7 @@ type Library struct {
 
 // LoanBook 借阅的书籍
 type LoanBook struct {
+	BookID      string // 书籍id 用于续借
 	Author      string
 	Title       string
 	PublishYear int     // 出版年
@@ -78,11 +81,14 @@ func (lib *Library) GetLoan() []LoanBook {
 			v := reflect.ValueOf(&book)
 			elem := v.Elem()
 			typeOfBook := elem.Type()
-			eq := 2
+			eq := 1
 			for k := 0; k < elem.NumField(); k++ {
 				val := strings.TrimSpace(s.Find("td").Eq(eq).Text())
 				switch typeOfBook.Field(k).Name {
 				case "ReturnDate", "ReturnTime":
+				case "BookID":
+					elem.Field(k).SetString(strings.TrimSpace(s.Find("td").Eq(eq).Find("input").AttrOr("name", "")))
+					eq++
 				case "PublishYear":
 					v, _ := strconv.Atoi(val)
 					elem.Field(k).SetInt(int64(v))
@@ -119,7 +125,7 @@ func (lib *Library) GetLoanAll() []LoanBook {
 			for k := 0; k < elem.NumField(); k++ {
 				val := strings.TrimSpace(s.Find("td").Eq(eq).Text())
 				switch typeOfBook.Field(k).Name {
-				case "Number":
+				case "Number", "BookID":
 				case "PublishYear":
 					v, _ := strconv.Atoi(val)
 					elem.Field(k).SetInt(int64(v))
@@ -140,14 +146,35 @@ func (lib *Library) GetLoanAll() []LoanBook {
 	return books
 }
 
-func (lib *Library) Loan() {
-
+// Loan 续借
+func (lib *Library) Loan(bookID string) bool {
+	return lib.loan(bookID)
 }
 
-func (lib *Library) LoanAll() {
-
+// LoanAll 续借全部
+func (lib *Library) LoanAll() bool {
+	return lib.loan("")
 }
 
+// bookID 等于空时为续借全部
+func (lib *Library) loan(bookID string) bool {
+	ok := false
+	param := "func=bor-renew-all&adm_library=SCU50"
+	if bookID != "" {
+		param += fmt.Sprintf("&renew_selected=Y&%s=Y", bookID)
+	}
+	lib.c.OnHTML("body", func(e *colly.HTMLElement) {
+		if strings.Contains(e.Text, "续借不成功") {
+			ok = false
+		} else if strings.Contains(e.Text, "续借成功") {
+			ok = true
+		}
+	})
+	lib.c.Visit(lib.URL + "?" + param)
+	return ok
+}
+
+// getURL 获取真实url
 func getURL() string {
 	c := colly.NewCollector()
 	urlstr := ""
