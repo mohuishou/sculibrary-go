@@ -1,5 +1,8 @@
 # 四川大学图书馆开发包
 
+## 说明
+不再更新，请使用功能更加完善的 [https://github.com/mohuishou/scu](https://github.com/mohuishou/scu)
+
 ## Install
 ```bash
 go get -u github.com/mohuishou/sculibrary-go
